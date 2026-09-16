@@ -1,0 +1,84 @@
+<UserControl x:Class="RamDisk.App.MonitorView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:RamDisk.App">
+  <UserControl.Resources>
+    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="MinHeight" Value="28"/><Setter Property="Padding" Value="6,3"/><Setter Property="FontSize" Value="12"/></Style>
+    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Padding" Value="9,5"/><Setter Property="FontSize" Value="12"/><Setter Property="MinHeight" Value="28"/></Style>
+    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}"><Setter Property="Margin" Value="0,0,12,0"/><Setter Property="FontSize" Value="12"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style x:Key="ToolLabel" TargetType="TextBlock" BasedOn="{StaticResource Caption}"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="0,0,6,0"/></Style>
+    <Style x:Key="Stat" TargetType="Border" BasedOn="{StaticResource Card}"><Setter Property="Padding" Value="10,7"/><Setter Property="Margin" Value="0,0,6,0"/><Setter Property="CornerRadius" Value="6"/></Style>
+    <Style x:Key="StatValue" TargetType="TextBlock"><Setter Property="FontSize" Value="19"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,2,0,1"/></Style>
+  </UserControl.Resources>
+  <Grid Margin="16,14">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <DockPanel Margin="0,0,0,8">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+        <ComboBox x:Name="DiskChoice" Width="175" SelectionChanged="Choice_Changed" AutomationProperties.Name="監視するディスク"/>
+        <Button Content="{Binding ToggleLabel, Source={x:Static local:ThemeManager.Current}}" Click="Theme_Click" Margin="7,0,0,0" ToolTip="ライト / ダークを切り替える（次回起動時にも保持）"/>
+        <Button x:Name="ExpandButton" Content="広く表示" Margin="7,0,0,0" Click="Expand_Click" ToolTip="サイドバーを隠してグラフを広く表示"/>
+      </StackPanel>
+      <TextBlock Text="ストレージ モニター" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+    </DockPanel>
+    <Border Grid.Row="1" Background="{DynamicResource InfoBackground}" CornerRadius="4" Padding="9,5" Margin="0,0,0,8">
+      <TextBlock x:Name="StatusText" Text="監視を準備しています…" Foreground="{DynamicResource InfoText}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+    </Border>
+    <UniformGrid Grid.Row="2" Columns="6" Margin="0,0,-6,9">
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="読取 · MiB/s" Style="{StaticResource Caption}"/><TextBlock x:Name="ReadRateText" Text="—" Style="{StaticResource StatValue}" Foreground="{DynamicResource ReadSeries}"/><TextBlock Text="現在の速度" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="書込 · MiB/s" Style="{StaticResource Caption}"/><TextBlock x:Name="WriteRateText" Text="—" Style="{StaticResource StatValue}" Foreground="{DynamicResource WriteSeries}"/><TextBlock Text="現在の速度" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="IOPS · 合計" Style="{StaticResource Caption}"/><TextBlock x:Name="IopsText" Text="—" Style="{StaticResource StatValue}"/><TextBlock Text="アクセス / 秒" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="使用率" Style="{StaticResource Caption}"/><TextBlock x:Name="CapacityText" Text="—" Style="{StaticResource StatValue}"/><TextBlock x:Name="CapacityDetail" Text="使用 / 総容量" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="累計 · 読み取り" Style="{StaticResource Caption}"/><TextBlock x:Name="ReadTotalText" Text="—" Style="{StaticResource StatValue}"/><TextBlock x:Name="ReadOpsText" Text="0 回" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+      <Border Style="{StaticResource Stat}"><StackPanel><TextBlock Text="累計 · 書き込み" Style="{StaticResource Caption}"/><TextBlock x:Name="WriteTotalText" Text="—" Style="{StaticResource StatValue}"/><TextBlock x:Name="WriteOpsText" Text="0 回" Style="{StaticResource Caption}" FontSize="11"/></StackPanel></Border>
+    </UniformGrid>
+    <Border Grid.Row="3" Style="{StaticResource Card}" Padding="12,10" CornerRadius="7">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="2*" MinHeight="155"/>
+          <RowDefinition x:Name="SplitterRow" Height="7"/><RowDefinition x:Name="SecondaryRow" Height="*" MinHeight="145"/>
+        </Grid.RowDefinitions>
+        <WrapPanel Margin="0,0,0,7">
+          <TextBlock Text="指標" Style="{StaticResource ToolLabel}"/><ComboBox x:Name="MetricChoice" Width="163" SelectionChanged="Choice_Changed" AutomationProperties.Name="グラフの指標" Margin="0,0,10,0"/>
+          <TextBlock Text="期間" Style="{StaticResource ToolLabel}"/><ComboBox x:Name="RangeChoice" Width="88" SelectionChanged="Range_Changed" AutomationProperties.Name="表示期間プリセット" Margin="0,0,10,0"/>
+          <TextBlock Text="集計" Style="{StaticResource ToolLabel}"/><ComboBox x:Name="IntervalChoice" Width="85" SelectionChanged="Choice_Changed" AutomationProperties.Name="集計間隔" Margin="0,0,10,0"/>
+          <Button x:Name="LiveButton" Content="● ライブ" Click="Now_Click" Margin="0,0,6,0" ToolTip="表示幅を保ったまま最新に追従"/>
+          <Button Content="リセット" Click="Reset_Click" ToolTip="選択中の期間プリセットに戻り、縦軸を自動調整"/>
+        </WrapPanel>
+        <WrapPanel Grid.Row="1" Margin="0,0,0,8">
+          <CheckBox x:Name="ReadVisible" Content="● 読み取り" Foreground="{DynamicResource ReadSeries}" IsChecked="True" Click="Appearance_Click"/>
+          <CheckBox x:Name="WriteVisible" Content="● 書き込み" Foreground="{DynamicResource WriteSeries}" IsChecked="True" Click="Appearance_Click"/>
+          <ComboBox x:Name="ScaleChoice" Width="133" SelectionChanged="Scale_Changed" AutomationProperties.Name="縦軸スケール" Margin="0,0,7,0">
+            <ComboBoxItem Content="線形（0 基準）"/><ComboBoxItem Content="対数（0 対応）"/><ComboBoxItem Content="変化を強調"/>
+          </ComboBox>
+          <Button Content="縦軸を自動" Click="AutoY_Click" Margin="0,0,7,0"/>
+          <Button Content="−" Click="ZoomOut_Click" ToolTip="時間軸を縮小" AutomationProperties.Name="時間軸を縮小" Margin="0,0,4,0"/>
+          <Button Content="＋" Click="ZoomIn_Click" ToolTip="時間軸を拡大" AutomationProperties.Name="時間軸を拡大" Margin="0,0,7,0"/>
+          <Button Content="‹" Click="Previous_Click" ToolTip="表示幅の半分だけ過去へ" AutomationProperties.Name="過去へ移動" Margin="0,0,4,0"/>
+          <Button x:Name="NextButton" Content="›" Click="Next_Click" ToolTip="表示幅の半分だけ未来へ" AutomationProperties.Name="未来へ移動" Margin="0,0,12,0"/>
+          <CheckBox x:Name="SecondaryVisible" Content="比較グラフ" IsChecked="True" Click="Secondary_Click"/>
+        </WrapPanel>
+        <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <local:HistoryChart x:Name="Chart"/>
+          <TextBlock Grid.Row="1" x:Name="ReadoutText" FontSize="11" Foreground="{DynamicResource InfoText}" Padding="4,3" Background="{DynamicResource ReadoutBackground}" TextTrimming="CharacterEllipsis" Text="カーソルを合わせると時刻・実測値を表示"/>
+        </Grid>
+        <GridSplitter x:Name="ChartSplitter" Grid.Row="3" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="{DynamicResource Line}" ShowsPreview="True" ToolTip="上下のグラフの高さを調整"/>
+        <Grid Grid.Row="4" x:Name="SecondaryPanel">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal" Margin="0,3,0,2">
+            <TextBlock Text="比較" Style="{StaticResource ToolLabel}"/>
+            <ComboBox x:Name="SecondaryMetricChoice" Width="165" SelectionChanged="Choice_Changed" AutomationProperties.Name="比較グラフの指標"/>
+            <TextBlock Text="時間軸・カーソルを連動" Style="{StaticResource ToolLabel}" Margin="12,0,0,0"/>
+          </StackPanel>
+          <local:HistoryChart x:Name="SecondaryChart" Grid.Row="1" MinHeight="85"/>
+          <TextBlock Grid.Row="2" x:Name="SecondaryReadout" FontSize="11" Foreground="{DynamicResource InfoText}" Padding="4,3" Background="{DynamicResource ReadoutBackground}" TextTrimming="CharacterEllipsis" Text="カーソルを合わせると時刻・実測値を表示"/>
+        </Grid>
+      </Grid>
+    </Border>
+    <StackPanel Grid.Row="4" Margin="0,8,0,0">
+      <TextBlock x:Name="RangeText" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
+      <TextBlock x:Name="PeriodText" FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"/>
+      <TextBlock x:Name="PeakText" FontSize="11" Margin="0,3,0,0" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
+      <DockPanel Margin="0,6,0,0">
+        <Button DockPanel.Dock="Right" Content="操作・測定の説明" Click="Help_Click" Padding="8,3" MinHeight="23" FontSize="11"/>
+        <TextBlock Text="ホイール: 拡縮  ·  ドラッグ: 移動  ·  Ctrl: 縦軸  ·  Shift＋ドラッグ: 期間選択" FontSize="11" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+      </DockPanel>
+    </StackPanel>
+  </Grid>
+</UserControl>

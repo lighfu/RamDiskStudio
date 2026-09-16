@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>RamDiskStudio</AssemblyName>
+    <RootNamespace>RamDisk.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.3.1</Version>
+    <Description>Windows RAM ディスク マネージャー</Description>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../RamDisk.Core/RamDisk.Core.csproj" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.6" /></ItemGroup>
+</Project>
