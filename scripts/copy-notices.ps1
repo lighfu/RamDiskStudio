@@ -6,9 +6,21 @@ $cachePath = $assets.packageFolders.PSObject.Properties.Name | Select-Object -Fi
 $noticesPath = Join-Path $Destination 'licenses'
 New-Item -ItemType Directory -Path $noticesPath -Force | Out-Null
 $lines = @('# Third-party packages', '', 'Runtime packages restored from NuGet. Bundled license notices are in licenses/.', '')
+$packagePaths = @()
 foreach ($library in $assets.libraries.PSObject.Properties) {
     if ($library.Value.type -ne 'package') { continue }
-    $packagePath = Join-Path $cachePath $library.Value.path
+    $packagePaths += Join-Path $cachePath $library.Value.path
+}
+# Self-contained runtime packs are download dependencies, not entries in assets.libraries.
+$runtimeConfigPath = Join-Path $Destination 'RamDiskStudio.runtimeconfig.json'
+if (Test-Path -LiteralPath $runtimeConfigPath) {
+    $runtimeConfig = Get-Content -LiteralPath $runtimeConfigPath -Raw | ConvertFrom-Json
+    foreach ($framework in $runtimeConfig.runtimeOptions.includedFrameworks) {
+        $packagePaths += Join-Path $cachePath "$($framework.name.ToLowerInvariant()).runtime.win-x64/$($framework.version)"
+    }
+}
+foreach ($packagePath in ($packagePaths | Sort-Object -Unique)) {
+    if (!(Test-Path -LiteralPath $packagePath)) { throw "Missing package notices: $packagePath" }
     $manifestFile = Get-ChildItem -LiteralPath $packagePath -Filter '*.nuspec' | Select-Object -First 1
     [xml] $manifest = Get-Content -LiteralPath $manifestFile.FullName
     $metadata = $manifest.package.metadata

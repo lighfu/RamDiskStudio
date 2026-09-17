@@ -9,12 +9,14 @@ ImDisk を使って RAM ドライブを作成・管理する、日本語の Wind
 ## 起動
 
 1. [ImDisk 公式サイト](https://www.ltr-data.se/opencode.html/#ImDisk) から **ImDisk Virtual Disk Driver** をインストールします。物理メモリ固定を使う場合は awealloc も導入します。
-2. [ビルド・検証](#ビルド検証) の手順でアプリを生成し、`artifacts/release/RamDiskStudio.exe` を起動します。同じフォルダーの DLL・JSON ファイルも必要です。
+2. [最新版の Release](https://github.com/lighfu/RamDiskStudio/releases/latest) から `RamDiskStudio-0.3.1-win-x64.zip` をダウンロードしてすべて展開し、中の `RamDiskStudio.exe` を起動します。同じフォルダーの DLL・JSON ファイルも必要です。`Source code (zip)` はソースコードです。
 3. 「管理者として再起動」を押します。設定の閲覧・保存だけなら管理者権限は不要です。
 4. 「ディスクを追加」で名前、容量、ドライブ文字、形式を指定して保存します。
 5. 一覧で設定を選び「作成」を押します。「開く」でエクスプローラーを開けます。
 
-実行には .NET 10 Desktop Runtime の x64 版が必要です。ドライバーはアプリには同梱していません。
+Release の ZIP は Windows x64 向けで、.NET ランタイムを同梱しているため別途インストールは不要です。ドライバーは同梱していません。ソースから通常の `scripts/build.ps1` で生成した版には .NET 10 Desktop Runtime の x64 版が必要です。
+
+[変更履歴](CHANGELOG.md) と [導入方法・既知の制約を含むリリースノート](docs/releases/v0.3.1.md) も参照してください。配布 ZIP の SHA-256 は Release の `SHA256SUMS.txt` に記載しています。
 
 ## 機能
 
@@ -141,6 +143,8 @@ dotnet tests/RamDisk.Tests/bin/Release/net10.0-windows/RamDisk.Tests.dll --ui
 通常のテストは実ドライブを操作しません。`--ui` は WPF の描画・入力検証を行い、`artifacts/tests/` に画面 PNG を出力します。
 
 ビルドすると `artifacts/release/` に実行ファイル一式、`artifacts/RamDiskStudio-win-x64.zip` に配布用 ZIP を生成します。[検証記録](docs/validation.md) も参照してください。
+
+GitHub Release 用のランタイム同梱版は、クリーンな Git チェックアウトで PowerShell 7 から `./scripts/package-release.ps1` を実行します。Windows x64 向けの publish、配布物の DLL と同梱ランタイムによる UI テスト、ドキュメント・ライセンスの収集、ZIP と SHA-256 の生成まで行います。出力先は `artifacts/github-release/v0.3.1/` です。既存の出力先は上書きせず、必要なら `-OutputDirectory` で新しいフォルダーを指定します。
 
 実ドライバーの統合テストは **管理者 PowerShell** で明示的に実行します。空いている D～Z のうち末尾の文字を使い、NTFS / exFAT / FAT32 / 物理固定方式の一時 RAM ドライブ（64～256 MiB）を順番に作成します。1 MiB の乱数データを書き込み・読み戻し、管理オブジェクトを再生成して解除まで確認します。テストが作成した RAM ドライブ上のデータは解除時に消去されます。テストディスクの通常解除がロックで失敗した場合はその旨を出力し、識別情報の一致を再確認してテストディスクを強制解除します。
 
