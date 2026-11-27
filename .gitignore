@@ -1,6 +1,8 @@
 **/bin/
 **/obj/
 artifacts/
+/target/
+/assets/ramdisk.design.json
 .vs/
 .codegraph/
 *.user

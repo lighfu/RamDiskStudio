@@ -1,34 +1,29 @@
-param([string] $Destination = 'artifacts/release')
+param([Parameter(Mandatory)] [string] $Destination)
 $ErrorActionPreference = 'Stop'
-$workspacePath = Split-Path -Parent $PSScriptRoot
-$assets = Get-Content -LiteralPath (Join-Path $workspacePath 'src/RamDisk.App/obj/project.assets.json') -Raw | ConvertFrom-Json
-$cachePath = $assets.packageFolders.PSObject.Properties.Name | Select-Object -First 1
-$noticesPath = Join-Path $Destination 'licenses'
-New-Item -ItemType Directory -Path $noticesPath -Force | Out-Null
-$lines = @('# Third-party packages', '', 'Runtime packages restored from NuGet. Bundled license notices are in licenses/.', '')
-$packagePaths = @()
-foreach ($library in $assets.libraries.PSObject.Properties) {
-    if ($library.Value.type -ne 'package') { continue }
-    $packagePaths += Join-Path $cachePath $library.Value.path
-}
-# Self-contained runtime packs are download dependencies, not entries in assets.libraries.
-$runtimeConfigPath = Join-Path $Destination 'RamDiskStudio.runtimeconfig.json'
-if (Test-Path -LiteralPath $runtimeConfigPath) {
-    $runtimeConfig = Get-Content -LiteralPath $runtimeConfigPath -Raw | ConvertFrom-Json
-    foreach ($framework in $runtimeConfig.runtimeOptions.includedFrameworks) {
-        $packagePaths += Join-Path $cachePath "$($framework.name.ToLowerInvariant()).runtime.win-x64/$($framework.version)"
+$workspace = Split-Path -Parent $PSScriptRoot
+$manifest = Join-Path $workspace 'Cargo.toml'
+$resolved = cargo metadata --locked --manifest-path $manifest --format-version 1 --filter-platform x86_64-pc-windows-msvc
+if ($LASTEXITCODE -ne 0) { throw 'Unable to list Cargo dependencies.' }
+$metadata = $resolved | ConvertFrom-Json -Depth 20
+$licenses = Join-Path $Destination 'licenses'
+New-Item -ItemType Directory -Path $licenses | Out-Null
+$lines = @('# Third-party notices', '')
+$activePackages = @{}
+foreach ($node in $metadata.resolve.nodes) { $activePackages[$node.id] = $true }
+foreach ($package in ($metadata.packages | Sort-Object name,version)) {
+    if (-not $activePackages.ContainsKey($package.id) -or $package.name -eq 'ramdisk-studio') { continue }
+    $folder = Split-Path -Parent $package.manifest_path
+    $lines += "- $($package.name) $($package.version) — $($package.license)"
+    $files = @(Get-ChildItem -LiteralPath $folder -File | Where-Object Name -Match '^(LICENSE|LICENCE|COPYING|NOTICE|UNLICENSE)([._-].*|$)')
+    if ($package.license_file) {
+        $specified = Join-Path $folder $package.license_file
+        if (Test-Path -LiteralPath $specified -PathType Leaf) { $files += Get-Item -LiteralPath $specified }
+    }
+    foreach ($file in ($files | Sort-Object FullName -Unique)) {
+        Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $licenses "$($package.name)-$($package.version)-$($file.Name)") -Force
     }
 }
-foreach ($packagePath in ($packagePaths | Sort-Object -Unique)) {
-    if (!(Test-Path -LiteralPath $packagePath)) { throw "Missing package notices: $packagePath" }
-    $manifestFile = Get-ChildItem -LiteralPath $packagePath -Filter '*.nuspec' | Select-Object -First 1
-    [xml] $manifest = Get-Content -LiteralPath $manifestFile.FullName
-    $metadata = $manifest.package.metadata
-    $lines += "- $($metadata.id) $($metadata.version): $($metadata.license.InnerText) — https://www.nuget.org/packages/$($metadata.id)/$($metadata.version)"
-    Get-ChildItem -LiteralPath $packagePath -File -Recurse | Where-Object { $_.Name -match '^(LICENSE|NOTICE|THIRD.PARTY.NOTICES)(\.|$)' } | ForEach-Object {
-        $name = "$($metadata.id)-$($metadata.version)-$($_.Name)"
-        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $noticesPath $name) -Force
-    }
-}
-$lines | Set-Content -LiteralPath (Join-Path $Destination 'THIRD-PARTY-NOTICES.md') -Encoding UTF8
-Get-ChildItem -LiteralPath (Join-Path $workspacePath 'docs/licenses') -File | Copy-Item -Destination $noticesPath -Force
+$sdk = Join-Path (Split-Path -Parent $workspace) 'm3e-sdk'
+Copy-Item -LiteralPath (Join-Path $sdk 'NOTICE') -Destination (Join-Path $licenses 'm3e-sdk-NOTICE')
+Copy-Item -LiteralPath (Join-Path $sdk 'licenses') -Destination (Join-Path $licenses 'm3e-sdk') -Recurse
+$lines | Set-Content -LiteralPath (Join-Path $Destination 'THIRD-PARTY-NOTICES.md') -Encoding utf8

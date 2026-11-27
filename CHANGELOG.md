@@ -5,6 +5,24 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-27
+
+### Added
+
+- RAM チップと高速ストレージを表現した専用アイコン。EXE、タスクバー、各ウィンドウとアプリ内に適用。
+- Windows ログオン時の管理者権限での自動起動と RAM ディスクのマウント。初回の登録だけ管理者確認を行い、パスワードは保存しない方式。
+- 自動起動の有効化・無効化・更新画面、Program Files への保護された配置、スタートメニューのショートカット。
+
+### Changed
+
+- 画面を m3e SDK 1.0.1 に切り替え、アプリ・ディスク管理・監視・自動起動を Rust に移行。従来の設定と SQLite 履歴を引き続き読み込めます。
+- Windows x64 向け ZIP にネイティブ EXE を同梱。.NET ランタイムのインストールは不要です。
+- 画面全体の文言を簡潔に整理。キャッチコピー、重複する説明、不要な補足を削減。
+
+### Fixed
+
+- 自動マウントで 1 台が失敗しても、ほかの対象ディスクの作成を継続。稼働済みの所有ディスクと、競合する別のディスクは変更しない。
+
 ## [0.3.1] - 2026-09-17
 
 初回の GitHub Release。公開前に実装した機能を、この版の追加機能としてまとめています。
@@ -25,5 +43,6 @@
 
 導入方法、データ消失条件、測定の意味と既知の制約は [リリースノート](docs/releases/v0.3.1.md) を参照してください。
 
-[Unreleased]: https://github.com/lighfu/RamDiskStudio/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/lighfu/RamDiskStudio/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/lighfu/RamDiskStudio/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/lighfu/RamDiskStudio/releases/tag/v0.3.1
