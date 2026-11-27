@@ -1508,20 +1508,7 @@ impl Render for Studio {
         }
         let theme = Theme::get(cx);
         let dark = theme.is_dark(window);
-        let mut sidebar = column()
-            .w(px(176.0))
-            .flex_shrink_0()
-            .p(px(14.0))
-            .gap(px(12.0))
-            .h_full()
-            .bg(theme.color(ColorRole::SurfaceContainer, window))
-            .child(
-                row()
-                    .gap(px(8.0))
-                    .items_center()
-                    .child(img("ramdisk.png").size(px(28.0)))
-                    .child(Text::new("RAM Disk Studio").type_style(TypeStyle::TitleMedium)),
-            );
+        let mut navigation = wrap().child(img("ramdisk.png").size(px(24.0)));
         for (i, (page, label)) in [
             (Page::Disks, "ディスク"),
             (Page::Monitor, "モニター"),
@@ -1530,7 +1517,7 @@ impl Render for Studio {
         .into_iter()
         .enumerate()
         {
-            sidebar = sidebar.child(
+            navigation = navigation.child(
                 button(("nav", i), label)
                     .variant(if page == self.page {
                         ButtonVariant::Filled
@@ -1547,7 +1534,7 @@ impl Render for Studio {
                     })),
             );
         }
-        sidebar = sidebar.child(div().flex_1())
+        let tools = wrap()
             .child(button("help", "ヘルプ").on_click(cx.listener(|v, _, _, cx| { v.help = !v.help; cx.notify(); })))
             .child(button("theme", if dark { "ライトへ" } else { "ダークへ" }).on_click(cx.listener(move |v, _, _, cx| {
                 let mut theme = Theme::get(cx);
@@ -1557,6 +1544,15 @@ impl Render for Studio {
                 if let Err(e) = disk::write_json(&v.dir.join("appearance.json"), &data, false) { v.status = e.to_string(); }
                 cx.notify();
             })));
+        let toolbar = wrap()
+            .w_full()
+            .flex_shrink_0()
+            .justify_between()
+            .px(px(22.0))
+            .py(px(8.0))
+            .bg(theme.color(ColorRole::SurfaceContainer, window))
+            .child(navigation)
+            .child(tools);
         let page = if self.editor.is_some() {
             self.editor_view(cx)
         } else {
@@ -1589,19 +1585,19 @@ impl Render for Studio {
                 c.child(Text::new(self.status.clone()))
             })
             .child(page);
-        row()
+        column()
             .size_full()
             .bg(theme.color(ColorRole::Surface, window))
             .text_color(theme.color(ColorRole::OnSurface, window))
             .when(self.page != Page::Monitor || !self.wide, |r| {
-                r.child(sidebar)
+                r.child(toolbar)
             })
             .child(
                 div()
                     .id("content-scroll")
-                    .h_full()
+                    .w_full()
                     .flex_1()
-                    .min_w(px(0.0))
+                    .min_h(px(0.0))
                     .overflow_y_scroll()
                     .child(content),
             )
